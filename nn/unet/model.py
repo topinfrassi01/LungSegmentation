@@ -1,36 +1,11 @@
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Conv2D
+from keras.models import *
+from keras.layers import *
 from keras.optimizers import SGD
 from keras import backend as K
-from layers import ResidualRecurrentConv2D
-
-class RRCNN_block(nn.Module):
-    def __init__(self,ch_in,ch_out,t=2):
-        super(RRCNN_block,self).__init__()
-        self.RCNN = nn.Sequential(
-            Recurrent_block(ch_out,t=t),
-            Recurrent_block(ch_out,t=t)
-        )
-        self.Conv_1x1 = nn.Conv2d(ch_in,ch_out,kernel_size=1,stride=1,padding=0)
-
-    def forward(self,x):
-        x = self.Conv_1x1(x)
-        x1 = self.RCNN(x)
-        return x+x1
-
-def two_rcnn2D(filters):
-    return Sequential([
-        RecurrentConv2D
-    ])
-
 
 def unet(pretrained_weights = None,input_size = (256,256,1)):
     inputs = Input(input_size)
-
-    conv1_r1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer = 'he_normal')(inputs)
-    conv1_r2
-
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
