@@ -10,5 +10,4 @@ python3 /Users/francistoupin/Documents/SYS843/preprocess/preprocess_images.py \
     --maskspath "/Users/francistoupin/Documents/SYS843/data/masks_left_lung" "/Users/francistoupin/Documents/SYS843/data/masks_right_lung" \
     --output "/Users/francistoupin/Documents/SYS843/data/prepared" \
     --grayscale \
-    --contours \
     --testsize=0.2

@@ -1,35 +1,24 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import numpy as np
-import time
-import os
+from tensorflow.compat.v1.nn import softmax
+from tensorflow.compat.v1.layers import batch_normalization, dropout, max_pooling2d, conv2d, conv2d_transpose
+#from metrics import hausdorff_object_score, dice_object_score, object_f_score
 
-from tensorflow.contrib.layers import batch_norm, softmax
-from tensorflow.python.layers.convolutional import conv2d, conv2d_transpose
-from tensorflow.python.layers.core import dropout
-from tensorflow.python.layers.pooling import max_pooling2d
-
-from metrics import hausdorff_object_score, dice_object_score, object_f_score
-from utils import augment_batch
-
+tf.disable_eager_execution()
 __author__ = "Mathias Baltzersen and Rasmus Hvingelby"
 
-class SegmentModel:
-    def __init__(self, hps):
-        self.hps = hps
-
-        self.batch_size = hps.get("batch_size")
-        self.epochs = hps.get("epochs")
+class DCAN:
+    def __init__(self):
 
         self.num_classes = 3
         self.img_input_channels = 1
 
         self.threshold = tf.constant(0.5, dtype=tf.float32)
-        self.l2_scale = hps.get("l2_scale")
-        self.contour_loss_weight = hps.get("contour_loss_weight")
-
+        self.l2_scale = 0
+        self.contour_loss_weight = 1
 
         self.dropout_p = 0.5
-        self.learning_rate_value = hps.get("lr")
+        self.learning_rate_value = 0.005
 
         self.sess = tf.Session(config=tf.ConfigProto(
             log_device_placement=False,
@@ -47,90 +36,30 @@ class SegmentModel:
             shape = variable.get_shape()
             variable_parameters = 1
             for dim in shape:
-                variable_parameters *= dim.value
+                variable_parameters *= dim
             total_parameters += variable_parameters
         print("Total parameters of model.: {}".format(total_parameters))
 
-    def train(self, input_image, gt_image, gt_cont):
-        """
-        Trains the model on given data epoch times
+    def train(self, train_generators, epochs, output):
+        summary_writer = tf.summary.FileWriter(output)
 
-        :param input_image:
-        :param gt_image:
-        """
-
-        summary_writer = tf.summary.FileWriter("./" + self.hps.get("exp_name"))
-
-        for epoch in range(self.epochs):
-            step = self._train_one_epoch(gt_cont, gt_image, input_image, summary_writer)
+        for epoch in range(epochs):
+            step = self._train_one_epoch(train_generators, summary_writer)
             
             if epoch % 10 == 0:
-                self.saver.save(self.sess, self.hps.get('exp_name') + '/model', global_step=step)
+                self.saver.save(self.sess, output + '/model', global_step=step)
 
-        self.saver.save(self.sess, self.hps.get('exp_name') + '/final-model')
-
-    def _get_image_descriptors(self, input_images):
-        image_descriptors = []
-
-        for batch in self._get_batches(input_images):
-            feed_dict = {
-                self.input_image: batch,
-                self.dropout_prob: 1.0,
-            }
-
-            batch_image_descriptors = self.sess.run(self.img_descriptor, feed_dict=feed_dict)
-            image_descriptors.extend(batch_image_descriptors)
-
-        return np.array(image_descriptors)
-
-    def _get_batches(self, input_images):
-        num_examples = input_images.shape[0]
-        num_batches = np.ceil(num_examples / self.batch_size)
-        batches = np.array_split(input_images, num_batches)
-        return batches
-
-    def _get_dropout_predictions(self, input_images):
-
-        predictions = []
-
-        for batch in self._get_batches(input_images):
-            feed_dict = {
-                self.input_image: batch,
-                self.dropout_prob: self.dropout_p
-            }
-
-            batch_pred = self.sess.run(self.preds, feed_dict=feed_dict)
-            predictions.extend(batch_pred)
-
-        return predictions
+        self.saver.save(self.sess, output + '/final-model')
 
 
-    def _train_one_epoch(self, gt_cont, gt_image, input_image, summary_writer):
-        num_examples = input_image.shape[0]
-        # shuffle
-        permutation_idx = np.random.permutation(num_examples)
-
-        shuffled_input_images = input_image[permutation_idx]
-        shuffled_gt_images = gt_image[permutation_idx]
-        shuffled_gt_conts = gt_cont[permutation_idx]
-
-        # TODO : Changer pour ImageDataGenerator de Keras
-
-        num_batches = num_examples / self.batch_size
-        input_image_batches = np.array_split(shuffled_input_images, num_batches)
-        gt_image_batches = np.array_split(shuffled_gt_images, num_batches)
-        gt_cont_batches = np.array_split(shuffled_gt_conts, num_batches)
-
-        for input_image_batch, gt_image_batch, gt_cont_batch in zip(input_image_batches, gt_image_batches,
-                                                                    gt_cont_batches):
-
-            x_train, y_train_seg, y_train_cont = augment_batch(input_image_batch, gt_image_batch, gt_cont_batch,
-                                                               self.hps.get("img_size"))
+    def _train_one_epoch(self, generators, summary_writer):
+        
+        for img_batch, mask_batch, contours_batch in generators:
 
             feed_dict = {
-                self.input_image: x_train,
-                self.gt_image: y_train_seg,
-                self.gt_contours: y_train_cont,
+                self.input_image: img_batch,
+                self.gt_image: mask_batch,
+                self.gt_contours: contours_batch,
                 self.dropout_prob: self.dropout_p,
                 self.lr: self.learning_rate_value
             }
@@ -138,7 +67,6 @@ class SegmentModel:
             _, summary, step, loss = self.sess.run([self.train_op, self.summaries, self.global_step, self.loss],
                                                    feed_dict=feed_dict)
 
-            print("step: {0:}, loss: {1:.3f}, training_data_size: {2:}".format(step, loss, num_examples))
             if step > 10000:
                 self.learning_rate_value = 0.00005
 
@@ -146,77 +74,28 @@ class SegmentModel:
 
         return step
 
+    def predict(self, images, batch_size=32):
+        num_examples = images.shape[0]
+        num_batches = np.ceil(num_examples // batch_size)
 
-    def _forward_pass(self, input_images):
-        """
-        Makes a forward pass without dropout to get
-        predictions and img descriptors for. Used
-        when bootstrap models need to predict.
+        batches = np.array_split(images, num_batches)
 
-        :param input_images:
-        :return:
-        """
-        predictions = []
-        image_descriptors = []
+        ## TODO : Revenir si kkchose marche pas
+        dropout_probability = 0.0
+        batch_predictions = []
 
-        for batch in self._get_batches(input_images):
-
+        for input_image_batch in batches:
             feed_dict = {
-                self.input_image: batch,
-                self.dropout_prob: 1.0
+                self.input_image: input_image_batch,
+                self.dropout_prob: dropout_probability
             }
 
-            batch_pred, batch_img_descriptor = self.sess.run([self.preds, self.img_descriptor], feed_dict=feed_dict)
+            output_predictions = self.sess.run(self.preds, feed_dict=feed_dict)
 
-            predictions.extend(batch_pred)
-            image_descriptors.extend(batch_img_descriptor)
+            batch_predictions.extend(output_predictions)
 
-        return predictions, image_descriptors
+        return np.array(batch_predictions)
 
-    def evaluate(self, input_images, gt_images, ensemble_count=1):
-
-        num_examples = input_images.shape[0]
-        num_batches = np.ceil(num_examples // self.batch_size)
-
-        input_image_batches = np.array_split(input_images, num_batches)
-        gt_image_batches = np.array_split(gt_images, num_batches)
-
-        dropout_probability = 1.0
-
-        ensembles = []
-
-        if ensemble_count > 1:
-            dropout_probability = 0.3
-
-        for _ in range(ensemble_count):
-
-            batch_predictions = []
-
-            for i, (input_image_batch, gt_image_batch) in enumerate(zip(input_image_batches, gt_image_batches)):
-                feed_dict = {
-                    self.input_image: input_image_batch,
-                    self.dropout_prob: dropout_probability
-                }
-
-                output_predictions = self.sess.run(self.preds, feed_dict=feed_dict)
-
-                batch_predictions.extend(output_predictions)
-
-            ensembles.append(np.array(batch_predictions))
-
-        ensembles_predictions = np.array(ensembles)
-
-        expected_shape_out = ensemble_count, input_images.shape[0], input_images.shape[1], input_images.shape[2], input_images.shape[3]
-#        assert ensembles_predictions.shape == expected_shape_out
-
-        return np.array(ensembles)
-
-    def final_predictions(self, ensemble_predictions, soft=True):
-        if soft:
-            return np.mean(ensemble_predictions, axis=0)
-        else:
-            print("hard is not implemented")
-            return np.mean(ensemble_predictions, axis=0)
 
     def _bottleneck(self, inputs, size=None):
         conv1 = conv2d(inputs, filters=size, kernel_size=1, padding='same')
@@ -231,7 +110,7 @@ class SegmentModel:
         return tf.add(hack_conv, conv3)
 
     def _add_common_layers(self, inputs):
-        bn = batch_norm(inputs)
+        bn = batch_normalization(inputs)
         relu_ = tf.nn.relu(bn)
 
         return relu_
@@ -252,10 +131,10 @@ class SegmentModel:
             cont_loss = tf.losses.log_loss(labels=self.gt_contours, predictions=self.preds_cont,
                                            weights=self.contour_loss_weight)
 
-            vars = tf.trainable_variables()
+            variables = tf.trainable_variables()
 
             #Apply regularization to all non bias variables
-            lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in vars
+            lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in variables
                                if 'bias' not in v.name]) * self.l2_scale
 
             loss = tf.add_n([lossL2, seg_loss, cont_loss])
@@ -271,14 +150,14 @@ class SegmentModel:
 
     def _create_model(self):
 
-        self.input_image = tf.placeholder(tf.float32, shape=(None, None, None, self.img_input_channels), name='input_image_placeholder')
-        self.gt_image = tf.placeholder(tf.int32, shape=(None, None, None, self.num_classes), name='gt_image_placeholder')
-        self.gt_contours = tf.placeholder(tf.int32, shape=(None, None, None, self.num_classes), name='gt_contours_placeholder')
+        self.input_image = tf.placeholder(tf.float32, shape=(None, 256, 256, self.img_input_channels), name='input_image_placeholder')
+        self.gt_image = tf.placeholder(tf.int32, shape=(None, 256, 256, self.num_classes), name='gt_image_placeholder')
+        self.gt_contours = tf.placeholder(tf.int32, shape=(None, 256, 256, self.num_classes), name='gt_contours_placeholder')
         self.dropout_prob = tf.placeholder(dtype=tf.float32, shape=None, name='dropout_prob_placeholder')
 
         self.lr = tf.placeholder(dtype=tf.float32, shape=None, name='learning_rate_placeholder')
 
-        scale_nc = self.hps.get('scale_nc')
+        scale_nc = 1
 
         with tf.variable_scope("encoder"):
             with tf.variable_scope("block_1"):

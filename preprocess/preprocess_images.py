@@ -14,7 +14,8 @@ def preprocess_images(image_path, masks_paths, output, one_hot, grayscale, test_
             raise ValueError("maskpath : {0} doesn't exist".format(mask_path))
 
     if not os.path.exists(output):
-        raise ValueError("output : {0} doesn't exist".format(output))
+        os.mkdir(output)
+        print("Created :" + output)
 
     first_pass = True
     image_files = list(sorted(os.listdir(image_path)))

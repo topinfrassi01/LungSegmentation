@@ -10,8 +10,9 @@ python3 /Users/francistoupin/Documents/SYS843/nn/unet/main.py \
                 --xtest '/Users/francistoupin/Documents/SYS843/nn/unet/data/images_test.npy' \
                 --ytrain '/Users/francistoupin/Documents/SYS843/nn/unet/data/masks_train.npy' \
                 --ytest '/Users/francistoupin/Documents/SYS843/nn/unet/data/masks_test.npy' \
+                --debug \
                 --output $RESULT_PATH \
                 --nepochs $1 \
-                --batchsize $2
+                --batchsize $2 
                 
 

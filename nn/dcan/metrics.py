@@ -1,3 +1,4 @@
+# pylint: skip-file
 from __future__ import division
 from sklearn.neighbors import NearestNeighbors
 from PIL import Image

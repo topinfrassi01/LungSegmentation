@@ -42,25 +42,13 @@ def train(x_train, y_train, batch_size, nepochs, output, debug):
     datagen_x.fit(x_train, augment=True, seed=seed)
     datagen_y.fit(y_train, augment=True, seed=seed)
 
-    generator = zip(datagen_x.flow(x_train, seed=seed), datagen_y.flow(y_train, seed=seed))
+    generator = zip(datagen_x.flow(x_train, seed=seed, batch_size=batch_size), datagen_y.flow(y_train, seed=seed, batch_size=batch_size))
 
     model = unet()
-    #model_checkpoint = ModelCheckpoint(os.path.join(output, 'unet.hdf5'), monitor='loss',verbose=1, save_best_only=True)
-
-    if debug:
-        for x,y in generator:
-            cv2.imshow("x", x[0])
-            cv2.imshow("y", y[0] * 255)
-            k = cv2.waitKey()
-            cv2.destroyAllWindows()
-
-            if k == 13:
-                exit()
 
     model.fit_generator(generator,
                     steps_per_epoch=len(x_train) / batch_size,
                     epochs=nepochs)
-                    #callbacks=[model_checkpoint])
 
     datagen_x.standardize(x_train)
     result = model.predict(x_train, batch_size=1)
