@@ -40,11 +40,11 @@ class DCAN:
             total_parameters += variable_parameters
         print("Total parameters of model.: {}".format(total_parameters))
 
-    def train(self, train_generators, epochs, output):
+    def train(self, train_generators, batch_size, epochs, output):
         summary_writer = tf.summary.FileWriter(output)
 
         for epoch in range(epochs):
-            step = self._train_one_epoch(train_generators, summary_writer)
+            step = self._train_one_epoch(train_generators, batch_size, summary_writer)
             
             if epoch % 10 == 0:
                 self.saver.save(self.sess, output + '/model', global_step=step)
@@ -52,10 +52,11 @@ class DCAN:
         self.saver.save(self.sess, output + '/final-model')
 
 
-    def _train_one_epoch(self, generators, summary_writer):
+    def _train_one_epoch(self, generators, batch_size, summary_writer):
         
+        batch = 0
         for img_batch, mask_batch, contours_batch in generators:
-
+            batch += 1
             feed_dict = {
                 self.input_image: img_batch,
                 self.gt_image: mask_batch,
@@ -67,10 +68,14 @@ class DCAN:
             _, summary, step, loss = self.sess.run([self.train_op, self.summaries, self.global_step, self.loss],
                                                    feed_dict=feed_dict)
 
+            print("step: {0:}, loss: {1:.3f}".format(step, loss))
             if step > 10000:
                 self.learning_rate_value = 0.00005
 
             summary_writer.add_summary(summary, step)
+
+            if batch == batch_size:
+                break
 
         return step
 

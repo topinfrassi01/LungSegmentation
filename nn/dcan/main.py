@@ -31,10 +31,10 @@ def load_data(img_train_path, img_test_path, label_train_path, label_test_path, 
     return (x_train, masks_train, contours_train, x_test, masks_test, contours_test)
 
 
-def train(train_generator, nepochs, output):
+def train(train_generator, nepochs, batch_size, output):
     
     model = DCAN()
-    model.train(train_generator, nepochs, output)
+    model.train(train_generator, batch_size, nepochs, output)
 
     return model
 
@@ -86,7 +86,7 @@ def main():
     train_generator = create_batch_generator(x_train, masks_train, contours_train, args.batchsize)
     test_generator = create_batch_generator(x_test, masks_test, contours_test, args.batchsize)
 
-    model = train(train_generator, args.nepochs, args.output)
+    model = train(train_generator, args.nepochs, args.batch_size, args.output)
 
     # TODO : Add something to test
 
