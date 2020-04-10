@@ -21,6 +21,32 @@ def load_data(img_train_path, img_test_path, label_train_path, label_test_path):
     
     return (x_train, y_train, x_test, y_test)
 
+def test(x_test, y_test):
+    seed = 73
+
+    datagen_x = ImageDataGenerator(
+        samplewise_center=True,
+        samplewise_std_normalization=True)
+
+    datagen_y = ImageDataGenerator()
+
+    datagen_x.fit(x_test, augment=False, seed=seed)
+    datagen_y.fit(y_test, augment=False, seed=seed)
+
+    generator = zip(datagen_x.flow(x_test, seed=seed, batch_size=1), datagen_y.flow(y_test, seed=seed, batch_size=1))
+
+    i = 0
+    for x,y in generator:
+        print("Batch {0}".format(i))
+        for x_, y_ in zip(x,y):
+            cv2.imshow("x", x_)
+            cv2.imshow("y", y_ * 255)
+            k = cv2.waitKey()
+            cv2.destroyAllWindows()
+
+            if k == 13:
+                exit()
+        i += 1
 
 def train(x_train, y_train, batch_size):
     seed = 73
@@ -65,13 +91,15 @@ def main():
     parser.add_argument('--ytrain', type=str, help='Path where training masks .npy dataset is.')
     parser.add_argument('--ytest', type=str, help='Path where testing masks .npy dataset is.')
     parser.add_argument('--batchsize', type=int, default=32, help="Generator's batch size.")
-
+    parser.add_argument('--showtest', action='store_true')
     args = parser.parse_args()
 
     #Let's assume data is loaded in a "label encoded" way.
     x_train, y_train, x_test, y_test = load_data(args.xtrain, args.xtest, args.ytrain, args.ytest)
-
-    train(x_train, y_train, args.batchsize)
+    if args.showtest:
+        test(x_test, y_test)
+    else:
+        train(x_train, y_train, args.batchsize)
 
 
 if __name__ == "__main__":

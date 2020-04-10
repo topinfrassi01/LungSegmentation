@@ -38,7 +38,7 @@ def preprocess_images(image_path, masks_paths, output, one_hot, grayscale, test_
         contours = np.zeros_like(masks)
 
     for c, mask_path in enumerate(masks_paths):
-
+        print("Processing {0}".format(mask_path))
         masks_files = list(sorted(os.listdir(mask_path)))
 
         for i, file in enumerate(masks_files):

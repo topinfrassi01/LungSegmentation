@@ -10,6 +10,7 @@ python3 /Users/francistoupin/Documents/SYS843/preprocess/debug_processed.py \
                 --xtest '/Users/francistoupin/Documents/SYS843/data/prepared/images_test.npy' \
                 --ytrain '/Users/francistoupin/Documents/SYS843/data/prepared/masks_train.npy' \
                 --ytest '/Users/francistoupin/Documents/SYS843/data/prepared/masks_test.npy' \
-                --batchsize $1
+                --batchsize $1 \
+                $2
                 
 

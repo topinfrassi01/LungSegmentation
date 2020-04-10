@@ -76,7 +76,7 @@ def rec_res_block(input_layer, out_n_filters, batch_normalization=False, kernel_
 
 ########################################################################################################
 #Recurrent Residual Convolutional Neural Network based on U-Net (R2U-Net)
-def r2_unet(image_shape=(256,256,1)):
+def r2_unet(image_shape=(256,256,1), output_channels=2):
     inputs = Input(image_shape)
     x = inputs
     depth = 4
@@ -96,7 +96,7 @@ def r2_unet(image_shape=(256,256,1)):
         x = up_and_concate(x, skips[i])
         x = rec_res_block(x, features)
 
-    conv6 = Conv2D(3, 1, padding='same', activation="softmax")(x)
+    conv6 = Conv2D(output_channels, 1, padding='same', activation="softmax")(x)
 
     model = Model(inputs=inputs, outputs=conv6)
 

@@ -3,8 +3,9 @@ from keras.models import *
 from keras.layers import *
 from keras.optimizers import SGD
 from keras import backend as K
+import utils.loss 
 
-def unet(pretrained_weights = None, input_size = (256,256,1)):
+def unet(pretrained_weights = None, input_size = (256,256,1), output_channels=2):
     inputs = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
@@ -43,12 +44,11 @@ def unet(pretrained_weights = None, input_size = (256,256,1)):
     merge9 = concatenate([conv1,up9], axis = 3)
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    #conv10 = Conv2D(3, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
-    conv10 = Conv2D(3, 1, activation = 'softmax')(conv9)
+    conv10 = Conv2D(output_channels, 1, activation = 'softmax')(conv9)
 
     model = Model(input = inputs, output = conv10)
 
-    model.compile(optimizer = SGD(learning_rate=0.001, momentum=0.99), loss = 'categorical_crossentropy', metrics = ['accuracy'])
+    model.compile(optimizer = SGD(learning_rate=0.001, momentum=0.99), loss = utils.loss.dice_coef_loss, metrics = ['accuracy', utils.loss.dice_coef])
     
     model.summary()
 

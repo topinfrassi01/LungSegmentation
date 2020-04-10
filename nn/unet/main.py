@@ -42,7 +42,7 @@ def train(x_train, y_train, batch_size, nepochs, output, debug):
     datagen_x.fit(x_train, augment=True, seed=seed)
     datagen_y.fit(y_train, augment=True, seed=seed)
 
-    generator = zip(datagen_x.flow(x_train, seed=seed, batch_size=batch_size), datagen_y.flow(y_train, seed=seed, batch_size=batch_size))
+    generator = zip(datagen_x.flow(x_train, seed=seed, batch_size=20), datagen_y.flow(y_train, seed=seed, batch_size=20))
 
     model = unet()
 

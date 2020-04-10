@@ -42,7 +42,7 @@ def train(x_train, y_train, batch_size, nepochs, output, debug):
 
     generator = zip(datagen_x.flow(x_train, seed=seed, batch_size=batch_size), datagen_y.flow(y_train, seed=seed, batch_size=batch_size))
 
-    model = r2_unet()
+    model = r2_unet(y_train.shape[-1])
 
     model.fit_generator(generator,
                     steps_per_epoch=len(x_train) / batch_size,
