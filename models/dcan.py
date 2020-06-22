@@ -1,8 +1,8 @@
-from keras.layers import Input, Conv2D, Layer, BatchNormalization, MaxPooling2D, Dropout, UpSampling2D, Activation, Concatenate
-from keras.losses import categorical_crossentropy
-from keras.models import Model
-from keras.optimizers import Adam
-from utils import dice_coef, jaccard_distance
+from tensorflow.keras.layers import Input, Conv2D, Layer, BatchNormalization, MaxPooling2D, Dropout, UpSampling2D, Activation, Concatenate
+from tensorflow.keras.losses import categorical_crossentropy
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from loss import dice_coef, jaccard_distance
 
 class Conv2DWithBatchNorm(Layer):
     def __init__(self, filters, kernel_size=3, strides=1, padding="same", activation="relu", data_format="channels_last"):
@@ -17,7 +17,7 @@ class Conv2DWithBatchNorm(Layer):
 
         return result
 
-def create_dcan(input_shape=(256,256,1), n_classes=2, lr=5e-4):
+def build_dcan(input_shape=(256,256,1), n_classes=2, lr=5e-4):
     inputs = Input(input_shape)
 
     conv1 = Conv2DWithBatchNorm(filters=64)(inputs)
@@ -32,8 +32,8 @@ def create_dcan(input_shape=(256,256,1), n_classes=2, lr=5e-4):
     conv6 = Conv2DWithBatchNorm(filters=256)(conv5)
     mp3 = MaxPooling2D(pool_size=(2,2))(conv6)
 
-    conv7 = Conv2DWithBatchNorm(filters=512)(mp2)
-    conv8 = Conv2DWithBatchNorm(filters=512)(conv5)
+    conv7 = Conv2DWithBatchNorm(filters=512)(mp3)
+    conv8 = Conv2DWithBatchNorm(filters=512)(conv7)
     #conv8 size should be 8 times smaller than input
     mp4 = MaxPooling2D(pool_size=(2,2))(conv8)
 
@@ -42,7 +42,7 @@ def create_dcan(input_shape=(256,256,1), n_classes=2, lr=5e-4):
     #conv10 size should be 16 times smaller than input
     mp5 = MaxPooling2D(pool_size=(2,2))(conv10)
 
-    conv11 = Conv2DWithBatchNorm(filters=1024)(mp4)
+    conv11 = Conv2DWithBatchNorm(filters=1024)(mp5)
     conv12 = Conv2DWithBatchNorm(filters=1024)(conv11)
     #conv12 size should be 32 times smaller than input
 
@@ -73,7 +73,7 @@ def create_dcan(input_shape=(256,256,1), n_classes=2, lr=5e-4):
     contours_output = Concatenate()([contours_upsample_1, contours_upsample_2, contours_upsample_3])
     contours_output = Conv2D(n_classes, 1, activation="softmax")
     
-    model = Model(inputs=inputs, outputs=[region_output, contours_output])
+    model = Model(inputs, [region_output, contours_output])
     model.compile(optimizer=Adam(lr=lr), loss=["categorical_crossentropy", "categorical_crossentropy"], metrics=['accuracy', dice_coef, jaccard_distance])
     
     return model

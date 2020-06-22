@@ -1,4 +1,4 @@
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 def dice_coef(y_true, y_pred, smooth=1):
     intersection = K.sum(y_true * y_pred, axis=[1,2,3])

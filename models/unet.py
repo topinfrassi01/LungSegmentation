@@ -1,6 +1,6 @@
-from keras.models import Model
-from keras.layers import Conv2D, MaxPooling2D, Dropout, Concatenate, UpSampling2D, Input
-from keras.optimizers import SGD
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Concatenate, UpSampling2D, Input
+from tensorflow.keras.optimizers import SGD
 from loss import dice_coef, jaccard_distance
 
 def build_unet(input_size = (256,256,1), n_classes=2, lr=0.0001, momentum=0.99, dropout_rate=0.5):
@@ -45,10 +45,10 @@ def build_unet(input_size = (256,256,1), n_classes=2, lr=0.0001, momentum=0.99, 
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
     conv10 = Conv2D(n_classes, 1, activation = 'softmax')(conv9)
 
-    model = Model(input = inputs, output = conv10)
+    model = Model(inputs, conv10)
 
     model.compile(optimizer = SGD(lr=lr, momentum=momentum), loss = 'categorical_crossentropy', metrics = ['accuracy', dice_coef, jaccard_distance])
     
-    model.summary()
+    #model.summary()
 
     return model
