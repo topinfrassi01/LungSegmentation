@@ -82,26 +82,6 @@ def preprocess_images(image_path, masks_paths, output, test_size):
     save_np_array_as_directory(contours_test, os.path.join(output, "test\\contours"))
     
 
-    # np.save(os.path.join(output, "images_train.npy"), images_train)
-    # np.save(os.path.join(output, "images_test.npy"), images_test)
-
-    # np.save(os.path.join(output, "masks_train.npy"), masks_train)
-    # np.save(os.path.join(output, "masks_test.npy"), masks_test)        
-
-    # print("Created images_train.npy with shape {0} with type {1}".format(images_train.shape, images_train.dtype))
-    # print("Created images_test.npy with shape {0} with type {1}".format(images_test.shape, images_test.dtype))
-    # print("Created masks_train.npy with shape {0} with type {1}".format(masks_train.shape, masks_train.dtype))
-    # print("Created masks_test.npy with shape {0} with type {1}".format(masks_test.shape, masks_test.dtype))
-
-    # _, __, contours_train, contours_test = train_test_split(images, contours, test_size=test_size, random_state=7)
-
-    # np.save(os.path.join(output, "contours_train.npy"), contours_train)
-    # np.save(os.path.join(output, "contours_test.npy"), contours_test)             
-
-    # print("Created contours_train.npy with shape {0} with type {1}".format(contours_train.shape, contours_train.dtype))
-    # print("Created contours_test.npy with shape {0} with type {1}".format(contours_test.shape, contours_test.dtype))
-
-
 def save_np_array_as_directory(array, directory):
     path = os.path.join(os.getcwd(), directory)
     if not os.path.exists(path):
