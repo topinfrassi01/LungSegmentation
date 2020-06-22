@@ -91,7 +91,7 @@ def save_np_array_as_directory(array, directory):
         success = cv2.imwrite(os.path.join(path, "{0}.png".format(i)), array[i,:,:,:])
 
         if not success:
-            raise Error("Img write didn't work")
+            raise ValueError("cv2.imwrite didn't work")
 
     print("Successfully saved {0} images to directory {1}".format(array.shape[0], directory))
 
