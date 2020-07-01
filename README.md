@@ -19,9 +19,9 @@ Afterwards, run the combine_lungs.py script to combine the masks of both lungs i
 ## Network training
 
 Three architectures were tested : 
-- (U-Net)[https://arxiv.org/pdf/1505.04597.pdf]
-- (Recurrent Residual U-Net)[https://arxiv.org/abs/1802.06955]
-- (Deep Contour-Aware Network)[https://arxiv.org/abs/1604.02677]
+- [U-Net](https://arxiv.org/pdf/1505.04597.pdf)
+- [Recurrent Residual U-Net](https://arxiv.org/abs/1802.06955)
+- [Deep Contour-Aware Network](https://arxiv.org/abs/1604.02677)
 
 In the models.py file, there are implementation using Tensorflow's Keras of those three networks.
 There are also run_*.py files used to train each of the networks.
