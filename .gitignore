@@ -3,3 +3,5 @@
 .DS_STORE
 output_**
 .vscode/
+**.hdf5
+main/logs/fit/**

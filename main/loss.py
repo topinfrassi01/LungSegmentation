@@ -1,11 +1,11 @@
 from tensorflow.keras import backend as K
 
-def dice_coef(y_true, y_pred, smooth=1):
+def dice_coef(y_true, y_pred):
     intersection = K.sum(y_true * y_pred, axis=[1,2,3])
     union = K.sum(y_true, axis=[1,2,3]) + K.sum(y_pred, axis=[1,2,3])
-    return K.mean( (2. * intersection + smooth) / (union + smooth), axis=0)
+    return K.mean( (2. * intersection) / (union), axis=0)
 
-def jaccard_distance(y_true, y_pred, smooth=100):
+def jaccard_distance(y_true, y_pred):
     """Jaccard distance for semantic segmentation.
     Also known as the intersection-over-union loss.
     This loss is useful when you have unbalanced numbers of pixels within an image
@@ -34,5 +34,5 @@ def jaccard_distance(y_true, y_pred, smooth=100):
     """
     intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
     sum_ = K.sum(K.abs(y_true) + K.abs(y_pred), axis=-1)
-    jac = (intersection + smooth) / (sum_ - intersection + smooth)
+    jac = (intersection) / (sum_ - intersection)
     return jac
